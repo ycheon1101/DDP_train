@@ -1,13 +1,13 @@
 from pathlib import Path
 import sys
 # path
-heatmap_path = Path(__file__).parent
-src_path = heatmap_path.parent
+distribute_path = Path(__file__).parent
+src_path = distribute_path.parent
 # print(src_path)
 sys.path.append(str(src_path) + '/modules')
 
 import table_images
-from mlp import MLP
+from distributed_mlp import MLP
 import torch.optim as optim
 import torch.nn as nn
 import matplotlib.pyplot as plt
@@ -20,6 +20,7 @@ import pandas as pd
 import os
 import time
 from set_device import device
+# device = 'cpu'
 
 
 def main():
@@ -73,7 +74,12 @@ def main():
                 # start time
                 start_time = time.time()
 
-                model = MLP(in_feature=128, hidden_feature=neuron_list[neuron], hidden_layers=hidden_layer_list[layer], out_feature=3).to(device)
+                model = MLP(in_feature=128, hidden_feature=neuron_list[neuron], hidden_layers=hidden_layer_list[layer], out_feature=3)
+
+                if torch.cuda.device_count() > 1:
+                    model = nn.DataParallel(model, device_ids=[1, 2])
+                
+                model.to(device)
 
                 optimizer = optim.Adam(model.parameters(), lr=learning_rate) 
 
@@ -113,9 +119,9 @@ def main():
                 generated_reshape = generated_reshape.cpu().detach().numpy()
 
                 # save image
-                # img_path = os.path.join(dir_path / img_dir, f'reconstructed_image_{hidden_layer_list[layer]}_{neuron_list[neuron]}.jpg')
-                # save_img = Image.fromarray(generated_reshape.astype(np.uint8))
-                # save_img.save(img_path)
+                img_path = os.path.join(dir_path / img_dir, f'reconstructed_image_{hidden_layer_list[layer]}_{neuron_list[neuron]}_dist.jpg')
+                save_img = Image.fromarray(generated_reshape.astype(np.uint8))
+                save_img.save(img_path)
 
         # make table
         hidden_layer_df = pd.DataFrame(psnr_list, index=hidden_layer_list, columns=neuron_list)
@@ -128,8 +134,8 @@ def main():
         plt.ylabel('layers')
         plt.title('psnr_heatmap_img' + str(image))
 
-        # heatmap_image_path = os.path.join(dir_path / img_dir, f'psnr_heatmap_image_{image}.jpg')
-        # heat_map_psnr.figure.savefig(heatmap_image_path)
+        heatmap_image_path = os.path.join(dir_path / img_dir, f'psnr_heatmap_image_{image}_dist_ex2.jpg')
+        heat_map_psnr.figure.savefig(heatmap_image_path)
         plt.close()
 
         # generate time heatmap and save
@@ -137,9 +143,9 @@ def main():
         heat_map_time = sns.heatmap(train_time_df, cmap='GnBu', annot=True, annot_kws={'size':10}, fmt='.3f', xticklabels=True, yticklabels=True, vmin=0, vmax=50)
         plt.xlabel('neurons')
         plt.ylabel('layers')
-        plt.title('time_heatmap_single_gpu')
+        plt.title('time_heatmap_multi_gpu')
 
-        heatmap_image_path = os.path.join(dir_path / img_dir, f'time_heatmap_image_{image}_single_ex2.jpg')
+        heatmap_image_path = os.path.join(dir_path / img_dir, f'time_heatmap_image_{image}_dist_ex2.jpg')
         heat_map_time.figure.savefig(heatmap_image_path)
 
 
