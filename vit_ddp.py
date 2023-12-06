@@ -40,12 +40,6 @@ global_backward_data_processed = 0
 
 def setup(rank, world_size):
     os.environ['MASTER_ADDR'] = 'localhost'
-    # os.environ['MASTER_ADDR'] = '127.0.0.1'
-    # os.environ['MASTER_ADDR'] = 'fe80::e017:49ff:fe15:d163'
-    # os.environ['MASTER_ADDR'] = 'fe80::e017:49ff:fe15:d163'
-    # os.environ['MASTER_ADDR'] = 'tcp://172.30.0.7'
-    # os.environ['MASTER_ADDR'] = '172.30.0.7'
-    # os.environ['MASTER_ADDR'] = '192.168.0.32'
     os.environ['MASTER_PORT'] = '12355'
     # dist.init_process_group("gloo", rank=rank, world_size=world_size)
     dist.init_process_group("nccl", rank=rank, world_size=world_size)
